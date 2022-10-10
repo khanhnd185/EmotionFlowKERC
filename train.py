@@ -207,20 +207,21 @@ def test(model, data):
         num_workers=0,  # multiprocessing.cpu_count()
     )
     tq_test = tqdm(total=len(dataloader), desc="testing", position=2)
-    for batch_id, batch_data in enumerate(dataloader):
-        batch_data = [x.to(model.device()) for x in batch_data]
-        sentences = batch_data[0]
-        speaker_ids = batch_data[1]
-        emotion_idxs = batch_data[2].cpu().numpy().tolist()
-        mask = batch_data[3]
-        last_turns = batch_data[4]
-        outputs = model(sentences, mask, speaker_ids, last_turns)
-        for batch_idx in range(mask.shape[0]):
-            for seq_idx in range(mask.shape[1]):
-                if mask[batch_idx][seq_idx]:
-                    pred_list.append(outputs[batch_idx][seq_idx])
-                    y_true_list.append(emotion_idxs[batch_idx][seq_idx])
-        tq_test.update()
+    with torch.no_grad():
+        for batch_id, batch_data in enumerate(dataloader):
+            batch_data = [x.to(model.device()) for x in batch_data]
+            sentences = batch_data[0]
+            speaker_ids = batch_data[1]
+            emotion_idxs = batch_data[2].cpu().numpy().tolist()
+            mask = batch_data[3]
+            last_turns = batch_data[4]
+            outputs = model(sentences, mask, speaker_ids, last_turns)
+            for batch_idx in range(mask.shape[0]):
+                for seq_idx in range(mask.shape[1]):
+                    if mask[batch_idx][seq_idx]:
+                        pred_list.append(outputs[batch_idx][seq_idx])
+                        y_true_list.append(emotion_idxs[batch_idx][seq_idx])
+            tq_test.update()
     F1 = f1_score(y_true=y_true_list, y_pred=pred_list, average='weighted')
     model.train()
     return F1
@@ -269,7 +270,7 @@ if __name__ == '__main__':
     parser.add_argument('-te', '--test', action='store_true',
                         help='run test', default=False)
     parser.add_argument('-tr', '--train', action='store_true',
-                        help='run train', default=False)
+                        help='run train', default=True)
     parser.add_argument('-ft', '--finetune', action='store_true',
                         help='fine tune base the best model', default=False)
     parser.add_argument('-pr', '--print_error', action='store_true',

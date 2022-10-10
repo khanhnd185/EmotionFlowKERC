@@ -15,7 +15,6 @@ class CRFModel(nn.Module):
             config['bert_path'])
         self.dim = self.context_encoder.embeddings.word_embeddings.weight.data.shape[-1]
         # self.dim = self.context_encoder.config.hidden_size
-        self.spk_embeddings = nn.Embedding(300, self.dim)
         self.crf_layer = CRF(self.num_classes)
         self.emission = nn.Linear(self.dim, self.num_classes)
         self.loss_func = torch.nn.CrossEntropyLoss(ignore_index=-1)
